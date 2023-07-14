@@ -1,12 +1,5 @@
-if exists('g:loaded_codegen') | finish | endif
+function! s:complete(arg,line,pos) abort
+  return join(sort(luaeval('require("codegen.actions").actions_list()')), "\n")
+endfunction
 
-" expose vim commands and interface here
-" nnoremap <Plug>PlugCommand :lua require(...).plug_command()<CR>
-
-let s:save_cpo = &cpo
-set cpo&vim
-
-let g:loaded_codegen = 1
-
-let &cpo = s:save_cpo
-unlet s:save_cpo
+command! -nargs=? -complete=custom,s:complete Codegen lua require'codegen.commands'.codegen(<f-args>)

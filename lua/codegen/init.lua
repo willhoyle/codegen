@@ -1,5 +1,8 @@
---[[ this module exposes the interface of lua functions:
-define here the lua functions that activate the plugin ]]
+local actions = require("codegen.actions")
+local lib = require("codegen.lib")
 
-local main = require("codegen.main")
-local config = require("codegen.config")
+
+return {
+  run = lib.run,
+  register_action = actions.register_action,
+}
