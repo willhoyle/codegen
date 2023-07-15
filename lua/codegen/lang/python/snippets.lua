@@ -15,9 +15,6 @@ end
 function M.pytest(payload)
   local test_name = payload.test_name or 'test_name'
   local mocks = payload.mocks or {}
-
-
-
 end
 
 return M
