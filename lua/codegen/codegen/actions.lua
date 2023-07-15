@@ -15,8 +15,8 @@ function M.actions_list()
 end
 
 function M.get(action)
-  local action_config = actions[action]
-  return action_config
+  local action_func = actions[action]
+  return action_func
 end
 
 return M
