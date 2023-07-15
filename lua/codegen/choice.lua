@@ -6,7 +6,7 @@ local action_state = require "telescope.actions.state"
 local conf = require("telescope.config").values
 local state = require('telescope.actions.state')
 
-local lustache = require('codegen.lustache')
+local lustache = require('codegen.template')
 local async = require('codegen.async')
 
 
@@ -14,12 +14,13 @@ local Choice = {}
 Choice.__index = Choice
 
 function Choice.new(opts)
-  local options = {
+  local defaults = {
+    options = opts
   }
-  return setmetatable(options, Choice)
+  return setmetatable(defaults, Choice)
 end
 
-function Choice:get(name, choices)
+function Choice:get(choices)
   local return_value
   local choice_func = function(choice)
     return_value = choice
@@ -46,21 +47,11 @@ function Choice:leaving_telescope_prompt(name, callback)
 end
 
 function Choice:_get_telescope(name, opts, callback)
-  local choices = opts.choices or {}
-  local title = opts.title or "Choose:"
-
-  if not opts.preview then
-    opts.preview = {}
+  local options = vim.tbl_deep_extend("force", self.options, opts)
+  if not options.preview.empty_template then
+    options.preview.empty_template = options.preview.template
+    options.preview.empty_filetype = options.preview.filetype
   end
-  local preview = {
-    title = opts.preview.title or "Info",
-    filetype = opts.preview.filetype or 'markdown',
-    template = opts.preview.template,
-    empty_template = opts.preview.empty_template or opts.preview.template,
-    empty_filetype = opts.preview.empty_filetype or opts.preview.filetype,
-    data = opts.preview.data or {}
-  }
-  local render_options = opts.render_options or { data = {} }
 
   local telescope_leave_augroup = vim.api.nvim_create_augroup("TelescopeLeave", { clear = true })
   vim.api.nvim_create_autocmd('WinLeave', {
@@ -72,58 +63,63 @@ function Choice:_get_telescope(name, opts, callback)
 
   local result
   local pre = previewers.new_buffer_previewer {
-    title = preview.title,
+    title = options.preview.title,
     define_preview = function(_self, entry, status)
-      vim.api.nvim_buf_set_option(_self.state.bufnr, "filetype", preview.filetype)
+      vim.api.nvim_buf_set_option(_self.state.bufnr, "filetype", options.preview.filetype)
       local bufnr = vim.api.nvim_get_current_buf()
       local current_picker = state.get_current_picker(bufnr)
       local prompt = current_picker:_get_prompt()
-      if string.sub(prompt, -1, -1) == ':' then
-        preview.data[name] = string.sub(prompt, 1, -2)
+      if string.sub(prompt, -1, -1) == options.special_char then
+        options.data[name] = string.sub(prompt, 1, -2)
       else
-        preview.data[name] = entry.choice
+        options.data[name] = entry.choice
       end
       vim.api.nvim_buf_set_lines(_self.state.bufnr, 0, -1, false, lustache.render(
         {
-          template = preview.template,
-          data = preview.data or {}
+          template = options.preview.template,
+          data = options.data or {}
         }))
     end
   }
   local old = pre.preview
-  pre.preview = function(self, entry, status)
+  pre.preview = function(_self, entry, status)
     if not entry then
-      if not self._empty_bufnr then
-        self._empty_bufnr = vim.api.nvim_create_buf(false, true)
+      if not _self._empty_bufnr then
+        _self._empty_bufnr = vim.api.nvim_create_buf(false, true)
       end
 
-      if vim.api.nvim_buf_is_valid(self._empty_bufnr) then
-        vim.api.nvim_win_set_buf(status.preview_win, self._empty_bufnr)
+      if vim.api.nvim_buf_is_valid(_self._empty_bufnr) then
+        vim.api.nvim_win_set_buf(status.preview_win, _self._empty_bufnr)
       end
 
-      if preview.empty_template then
+      if options.preview.empty_template then
         local bufnr = vim.api.nvim_get_current_buf()
         local current_picker = state.get_current_picker(bufnr)
         local prompt = current_picker:_get_prompt()
-        preview.data[name] = prompt
-        vim.api.nvim_buf_set_option(self._empty_bufnr, "filetype", preview.empty_filetype)
-        vim.api.nvim_buf_set_lines(self._empty_bufnr, 0, -1, false,
+
+        if string.sub(prompt, -1, -1) == options.special_char then
+          options.data[name] = string.sub(prompt, 1, -2)
+        else
+          options.data[name] = prompt
+        end
+        vim.api.nvim_buf_set_option(_self._empty_bufnr, "filetype", options.preview.empty_filetype)
+        vim.api.nvim_buf_set_lines(_self._empty_bufnr, 0, -1, false,
           lustache.render({
-            template = preview.empty_template,
-            data = preview.data or {}
+            template = options.preview.empty_template,
+            data = options.data or {}
           }))
       end
       return true
     end
-    return old(self, entry, status)
+    return old(_self, entry, status)
   end
 
 
   local p = pickers.new({}, {
-    prompt_title = title,
+    prompt_title = options.title,
     previewer = pre,
     finder = finders.new_table {
-      results = choices,
+      results = options.choices,
       entry_maker = function(entry)
         if type(entry) ~= "table" then
           entry = {
@@ -155,7 +151,7 @@ function Choice:_get_telescope(name, opts, callback)
           -- ordinal: for sorting, possibly transformed value
           -- display: for results list, possibly transformed value
           result = action_state.get_selected_entry()
-          local override_char_is_present = string.sub(prompt, -1, -1) == ':'
+          local override_char_is_present = string.sub(prompt, -1, -1) == options.special_char
           if not result or override_char_is_present then
             local v = override_char_is_present and string.sub(prompt, 1, -2) or prompt
             if callback then

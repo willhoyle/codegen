@@ -1,11 +1,10 @@
-local utils = require('codegen.utils')
-local base = require('codegen.lang.base')
-local lustache = require('codegen.lustache')
-local PythonFile = require('codegen.lang.python.file').PythonFile
 local ts_parsers = require("nvim-treesitter.parsers")
 local ts_queries = require("nvim-treesitter.query")
 
-local lang = "python"
+local utils = require('codegen.utils')
+local template = require('codegen.template')
+local PythonFile = require('codegen.lang.python.file').PythonFile
+
 
 -- -- node should be a function node
 -- -- returns name, block
@@ -98,18 +97,18 @@ local lang = "python"
 local Python = {}
 Python.__index = Python
 
-local defaults = {}
 
-Python.new = function(options)
-  vim.cmd(":e " .. options.filepath)
-  local bufnr = vim.api.nvim_get_current_buf()
-  return setmetatable(vim.tbl_deep_extend("force", defaults, {
-    cache = options.cache,
-    filepath = options.filepath,
-    bufnr = bufnr
-  }), Python)
+Python.new = function(opts)
+  local defaults = {
+    options = opts or {}
+  }
+  return setmetatable(defaults, Python)
 end
 
+function Python:file(filepath, opts)
+  print(filepath)
+  return PythonFile.new(filepath, vim.tbl_deep_extend("force", self.options, opts or {}))
+end
 
 return {
   Python = Python

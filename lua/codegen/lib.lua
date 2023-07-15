@@ -7,21 +7,21 @@ local lang = require('codegen.lang')
 local Codegen = {}
 
 function Codegen.new(opts)
-  config.set_title(opts)
-
   local options = {
-    choice = choice.Choice.new(config.make_choice_options(opts)),
-    python = lang.python.Python.new(config.make_python_options(opts))
+    choice = choice.Choice.new(config.make_choice_options(opts.options or {})),
+    python = lang.Python.new(config.make_python_options(opts.options or {})),
+    pause = function() coroutine.yield() end
   }
-  return setmetatable(options, Session)
+  return setmetatable(options, Codegen)
 end
 
 local function run(func)
   local wrapped = async.void(func)
   wrapped()
+  print("out hereeeeee")
 end
 
 return {
-  Session = Codegen,
+  Codegen = Codegen,
   run = run
 }

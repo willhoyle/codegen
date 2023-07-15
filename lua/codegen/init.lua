@@ -3,7 +3,7 @@ local lib = require("codegen.lib")
 
 
 return {
-  run = lib.Codegen.run,
+  run = lib.run,
   register_action = actions.register_action,
   Codegen = lib.Codegen
 }
