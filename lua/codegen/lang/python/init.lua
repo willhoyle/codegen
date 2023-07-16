@@ -106,7 +106,6 @@ Python.new = function(opts)
 end
 
 function Python:file(filepath, opts)
-  print(filepath)
   return PythonFile.new(filepath, vim.tbl_deep_extend("force", self.options, opts or {}))
 end
 
