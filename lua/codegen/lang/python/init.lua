@@ -100,13 +100,22 @@ Python.__index = Python
 
 Python.new = function(opts)
   local defaults = {
-    options = opts or {}
+    file_options = opts or {}
   }
+  if not defaults.file_options.base_dir then
+    defaults.file_options.base_dir = "."
+  end
   return setmetatable(defaults, Python)
 end
 
 function Python:file(filepath, opts)
-  return PythonFile.new(filepath, vim.tbl_deep_extend("force", self.options, opts or {}))
+  return PythonFile.new(
+    self.file_options.base_dir .. "/" .. filepath,
+    vim.tbl_deep_extend("force", self.file_options, opts or {}))
+end
+
+function Python:base_dir(base_dir)
+  self.file_options.base_dir = base_dir
 end
 
 return {

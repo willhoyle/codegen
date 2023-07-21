@@ -33,32 +33,37 @@ function Choice:get(choices)
   return return_value
 end
 
-function Choice:leaving_telescope_prompt(name, callback)
+function Choice:leaving_telescope_prompt()
   local bufnr = vim.api.nvim_get_current_buf()
   local ft = vim.api.nvim_buf_get_option(bufnr, "filetype")
   if ft == "TelescopePrompt" then
     vim.api.nvim_del_augroup_by_name("TelescopeLeave")
-    if callback then
-      vim.schedule(function()
-        callback(nil)
-      end)
-    end
   end
 end
 
-function Choice:_get_telescope(name, opts, callback)
-  local options = vim.tbl_deep_extend("force", self.options, opts)
+function Choice:_get_telescope(opts, callback)
+  local options = vim.tbl_deep_extend("force", self.options, opts or {})
+  local cancel_func = function() end
+  if options.cancel_on_exit_telescope then
+    options.cancel_current()
+  else
+    cancel_func = function()
+      self:get_telescope(opts, callback)
+    end
+    options.set_current(cancel_func)
+  end
+  local telescope_leave_augroup = vim.api.nvim_create_augroup("TelescopeLeave", { clear = true })
+  vim.api.nvim_create_autocmd('WinLeave', {
+    group = telescope_leave_augroup,
+    pattern = "*",
+    callback = function() self:leaving_telescope_prompt() end
+  })
+
   if not options.preview.empty_template then
     options.preview.empty_template = options.preview.template
     options.preview.empty_filetype = options.preview.filetype
   end
 
-  local telescope_leave_augroup = vim.api.nvim_create_augroup("TelescopeLeave", { clear = true })
-  vim.api.nvim_create_autocmd('WinLeave', {
-    group = telescope_leave_augroup,
-    pattern = "*",
-    callback = function() self:leaving_telescope_prompt(name, callback) end
-  })
 
 
   local result
@@ -70,9 +75,9 @@ function Choice:_get_telescope(name, opts, callback)
       local current_picker = state.get_current_picker(bufnr)
       local prompt = current_picker:_get_prompt()
       if string.sub(prompt, -1, -1) == options.special_char then
-        options.data[name] = string.sub(prompt, 1, -2)
+        options.data[options.preview.choice_name] = string.sub(prompt, 1, -2)
       else
-        options.data[name] = entry.choice
+        options.data[options.preview.choice_name] = entry.choice
       end
       vim.api.nvim_buf_set_lines(_self.state.bufnr, 0, -1, false, lustache.render(
         {
@@ -98,9 +103,9 @@ function Choice:_get_telescope(name, opts, callback)
         local prompt = current_picker:_get_prompt()
 
         if string.sub(prompt, -1, -1) == options.special_char then
-          options.data[name] = string.sub(prompt, 1, -2)
+          options.data[options.preview.choice_name] = string.sub(prompt, 1, -2)
         else
-          options.data[name] = prompt
+          options.data[options.preview.choice_name] = prompt
         end
         vim.api.nvim_buf_set_option(_self._empty_bufnr, "filetype", options.preview.empty_filetype)
         vim.api.nvim_buf_set_lines(_self._empty_bufnr, 0, -1, false,
@@ -152,7 +157,7 @@ function Choice:_get_telescope(name, opts, callback)
           -- display: for results list, possibly transformed value
           result = action_state.get_selected_entry()
           local override_char_is_present = string.sub(prompt, -1, -1) == options.special_char
-          if not result or override_char_is_present then
+          if prompt and (not result or override_char_is_present) then
             local v = override_char_is_present and string.sub(prompt, 1, -2) or prompt
             if callback then
               vim.schedule(function()
@@ -162,7 +167,7 @@ function Choice:_get_telescope(name, opts, callback)
           else
             if callback then
               vim.schedule(function()
-                callback(result.value.choice)
+                callback(result.value.value)
               end)
             end
           end
@@ -176,7 +181,7 @@ function Choice:_get_telescope(name, opts, callback)
   p:find()
 end
 
-Choice.get_telescope = async.wrap(Choice._get_telescope, 4)
+Choice.get_telescope = async.wrap(Choice._get_telescope, 3)
 
 return {
   Choice = Choice

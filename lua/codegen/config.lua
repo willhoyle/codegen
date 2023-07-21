@@ -1,6 +1,7 @@
+local tasks = require "codegen.tasks"
 local M = {}
 
-local special_char = "@"
+local default_special_char = "@"
 
 local function title(special_char)
   return "Select from list or Enter prompt + " .. special_char .. " (e.g. my_prompt" .. special_char .. ")"
@@ -8,8 +9,8 @@ end
 
 local defaults = {
   choice = {
-    special_char = special_char,
-    title = title(special_char),
+    special_char = default_special_char,
+    title = title(default_special_char),
     choices = {},
     preview = {
       title = "Info",
@@ -17,8 +18,12 @@ local defaults = {
       filetype = "markdown",
       empty_template = nil,
       empty_filetype = nil,
+      choice_name = 'choice'
     },
-    data = {}
+    data = {},
+    set_current = tasks.set_current,
+    cancel_current = tasks.cancel_current,
+    cancel_on_exit = false
   },
   python = {}
 }

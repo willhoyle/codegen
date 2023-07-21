@@ -1,5 +1,6 @@
-local lib = require('codegen.lib')
+local lib     = require('codegen.lib')
 local actions = require('codegen.actions')
+local tasks   = require('codegen.tasks')
 
 
 local M = {
@@ -9,7 +10,8 @@ local M = {
       return
     end
     lib.run(action_func)
-  end
+  end,
+  codegen_cancel = tasks.cancel_current
 }
 
 return M
