@@ -58,6 +58,11 @@ codegen.register_action("examples.prompt",
 )
 ```
 
+<details>
+  <summary>Preview</summary>
+    
+<img width="1021" alt="image" src="https://github.com/willhoyle/codegen/assets/10117812/ce42f7ea-f431-453f-9a8c-5664f4c4f274">
+</details>
 
 ### Add lines to a new file
 Create a language specific file handle. If file doesn't exist, insert lines, and save.
@@ -78,6 +83,16 @@ codegen.register_action("examples.add_lines",
   end
 )
 ```
+<details>
+  <summary>Preview</summary>
+
+   ```python
+print('hello')
+print('world')
+  ```   
+
+</details>
+
 
 ### Templating ([lustache](https://github.com/Olivine-Labs/lustache))
 Get input from user, render template using input.
@@ -129,6 +144,18 @@ print('hello')]])
   end
 )
 ```
+<details>
+  <summary>Preview</summary>
+
+   ```python
+import sys
+import os
+
+
+print('hello')
+  ```   
+
+</details>
 
 ### Fragment
 Code fragments can render templates, and handle imports.
