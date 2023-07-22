@@ -1,5 +1,7 @@
 # codegen
-Code generation library and tools
+Code generation library and tools for neovim
+
+Heavy WIP
 
 
 ## Requirements
@@ -9,13 +11,27 @@ Code generation library and tools
 ## Install
 Install package
 ```lua
-{ "willhoyle/codegen" }
+"willhoyle/codegen"
+
+-- Requires
+"nvim-telescope/telescope.nvim"
 ```
+
+## Introduction
+Read [this blog post](https://williamhoyle.ca/blog/2023/code-generation-techniques-tools) to learn more
+about code generation techniques introduced in this library.
+
+- Easily automate boring boilerplate code
+- Standardizes naming schemes, conventions, and file structure in a codebase
+- No DSLs with hidden logic
+- Insert before/after specific lines in the code using treesitter and language servers
+- Get input from the user when required
+- Handle creating, saving, manipulating files
 
 ## Getting Started
 
 ### Register Action
-Register an action in a lua file, then trigger with command: `:Codegen my_comand`
+Register an action, then trigger with command `:Codegen my_comand`
 ```lua
 local codegen = require('codegen')
 
@@ -35,7 +51,9 @@ local codegen = require('codegen')
 codegen.register_action("examples.prompt",
   function()
     local c = codegen.Codegen.new()
-    local service_name = c.choice:get_telescope({ title = "What is the service name?" })
+    local service_name = c.choice:get_telescope(
+        { title = "What is the service name?" }
+    )
     print(service_name)
 )
 ```
@@ -43,6 +61,7 @@ codegen.register_action("examples.prompt",
 
 ### Add lines to a new file
 Create a language specific file handle. If file doesn't exist, insert lines, and save.
+
 Inserts lines at end of file if file already has content.
 ```lua
 local codegen = require('codegen')
@@ -60,7 +79,7 @@ codegen.register_action("examples.add_lines",
 )
 ```
 
-### Templating ([lustache](https://github.com/Olivine-Labs/lustache) )
+### Templating ([lustache](https://github.com/Olivine-Labs/lustache))
 Get input from user, render template using input.
 ```lua
 local codegen = require('codegen')
@@ -69,10 +88,15 @@ local template = require('codegen.template')
 codegen.register_action("examples.template",
   function()
     local c = codegen.Codegen.new()
-    local service_name = c.choice:get_telescope({ title = "What is the service name?" })
+    local service_name = c.choice:get_telescope(
+        { title = "What is the service name?" }
+    )
 
     local my_file = c.python:file("examples.template.py")
-    local lines = template.render("print('hello {{ service_name }}')", {service_name=service_name})
+    local lines = template.render(
+        "print('hello {{ service_name }}')",
+        { service_name = service_name }
+    )
     my_file:insert(lines)
     my_file:save()
   end
@@ -81,6 +105,7 @@ codegen.register_action("examples.template",
 
 ### Insert imports
 If the language handle provides it, insert imports.
+
 Inserts imports after the last import statement. If more control is needed, an external tool such as `isort`
 can be used to organize the imports on save.
 ```lua
@@ -95,8 +120,7 @@ codegen.register_action("examples.imports",
 import sys
 
 
-print('hello')]]
-)
+print('hello')]])
     my_file:insert(lines)
     my_file:insert_imports({
         "import os"
@@ -115,10 +139,12 @@ local Fragment = require('codegen.fragment')
 codegen.register_action("examples.fragment",
   function()
     local c = codegen.Codegen.new()
-    local service_name = c.choice:get_telescope({ title = "What is the service name?" })
+    local service_name = c.choice:get_telescope(
+        { title = "What is the service name?" }
+    )
 
     local my_file = c.python:file("examples.fragment.py")
-    local app = Fragment.new("print('hello {{ service_name }}')"
+    local app = Fragment.new("print('hello {{ service_name }}')",
       {
         data = { service_name = service_name },
         imports = { 'import sys', 'import os' }
