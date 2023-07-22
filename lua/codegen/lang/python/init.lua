@@ -108,7 +108,19 @@ Python.new = function(opts)
   return setmetatable(defaults, Python)
 end
 
+local function file_exists(filepath)
+  local f = io.open(filepath, "r")
+  if f ~= nil then
+    io.close(f)
+    return true
+  else
+    return false
+  end
+end
+
 function Python:file(filepath, opts)
+  self.file_options.exists = file_exists(filepath)
+  print(self.file_options.exists)
   return PythonFile.new(
     self.file_options.base_dir .. "/" .. filepath,
     vim.tbl_deep_extend("force", self.file_options, opts or {}))

@@ -80,10 +80,9 @@ function Choice:_get_telescope(opts, callback)
         options.data[options.preview.choice_name] = entry.choice
       end
       vim.api.nvim_buf_set_lines(_self.state.bufnr, 0, -1, false, lustache.render(
-        {
-          template = options.preview.template,
-          data = options.data or {}
-        }))
+        options.preview.template,
+        options.data
+      ))
     end
   }
   local old = pre.preview
@@ -109,10 +108,10 @@ function Choice:_get_telescope(opts, callback)
         end
         vim.api.nvim_buf_set_option(_self._empty_bufnr, "filetype", options.preview.empty_filetype)
         vim.api.nvim_buf_set_lines(_self._empty_bufnr, 0, -1, false,
-          lustache.render({
-            template = options.preview.empty_template,
-            data = options.data or {}
-          }))
+          lustache.render(
+            options.preview.empty_template,
+            options.data
+          ))
       end
       return true
     end

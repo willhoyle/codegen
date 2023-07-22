@@ -3,8 +3,9 @@ local lustache = require "lustache"
 local M = {}
 
 
-function M.render(options)
-  local output = M.render_string(options)
+function M.render(template, data)
+  data = data or {}
+  local output = M.render_string(template, data)
   local lines = {}
   for line in output:gmatch("(.-)[\r\n]") do
     table.insert(lines, line)
@@ -17,10 +18,8 @@ function M.render(options)
   return lines
 end
 
-function M.render_string(options)
-  local template = options.template or ''
-  local data = options.data or ''
-
+function M.render_string(template, data)
+  data = data or {}
   local output = lustache:render(template, data)
   return output
 end

@@ -50,6 +50,15 @@ function PythonFile:insert_after_node(node, fragment_or_lines)
   end
 end
 
+function PythonFile:insert(fragment_or_tbl)
+  fragment_or_tbl = fragment_or_tbl or {}
+  local lines = fragment_or_tbl.lines or fragment_or_tbl
+  vim.api.nvim_buf_set_lines(self.bufnr, -1, -1, true, lines)
+  if fragment_or_tbl.imports then
+    self:insert_imports(fragment_or_tbl.imports)
+  end
+end
+
 local import_statement_query = "(import_statement) @import_statement"
 local import_from_statement_query = "(import_from_statement) @import_from_statement"
 
