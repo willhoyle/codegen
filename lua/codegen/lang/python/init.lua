@@ -5,6 +5,38 @@ local utils = require('codegen.utils')
 local template = require('codegen.template')
 local PythonFile = require('codegen.lang.python.file').PythonFile
 
+local Python = {}
+Python.__index = Python
+
+
+Python.new = function(opts)
+  local defaults = {
+    options = opts or {},
+    base_dir = opts.base_dir or "."
+  }
+  return setmetatable(defaults, Python)
+end
+
+local function file_exists(filepath)
+  local f = io.open(filepath, "r")
+  if f ~= nil then
+    io.close(f)
+    return true
+  else
+    return false
+  end
+end
+
+function Python:file(filepath, opts)
+  self.options.exists = file_exists(filepath)
+  return PythonFile.new(
+    self.base_dir .. "/" .. template.render_string(filepath, self.options.data),
+    vim.tbl_deep_extend("force", self.options, opts or {}))
+end
+
+return {
+  Python = Python
+}
 
 -- -- node should be a function node
 -- -- returns name, block
@@ -93,43 +125,3 @@ local PythonFile = require('codegen.lang.python.file').PythonFile
 --     utils.insert_lines(node, insert_lines)
 --   end
 -- end
-
-local Python = {}
-Python.__index = Python
-
-
-Python.new = function(opts)
-  local defaults = {
-    file_options = opts or {}
-  }
-  if not defaults.file_options.base_dir then
-    defaults.file_options.base_dir = "."
-  end
-  return setmetatable(defaults, Python)
-end
-
-local function file_exists(filepath)
-  local f = io.open(filepath, "r")
-  if f ~= nil then
-    io.close(f)
-    return true
-  else
-    return false
-  end
-end
-
-function Python:file(filepath, opts)
-  self.file_options.exists = file_exists(filepath)
-  print(self.file_options.exists)
-  return PythonFile.new(
-    self.file_options.base_dir .. "/" .. filepath,
-    vim.tbl_deep_extend("force", self.file_options, opts or {}))
-end
-
-function Python:base_dir(base_dir)
-  self.file_options.base_dir = base_dir
-end
-
-return {
-  Python = Python
-}

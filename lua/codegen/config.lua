@@ -16,8 +16,8 @@ local defaults = {
       title = "Info",
       template = "",
       filetype = "markdown",
-      empty_template = nil,
-      empty_filetype = nil,
+      empty_template = "",
+      empty_filetype = "markdown",
       choice_name = 'choice'
     },
     data = {},
@@ -25,24 +25,24 @@ local defaults = {
     cancel_current = tasks.cancel_current,
     cancel_on_exit = false
   },
-  python = {}
+  python = {},
+  data = {}
 }
 
 M.options = {}
 
 local function set_title(opts)
-  if opts.special_char and not opts.preview.title then
-    opts.preview.title = title(opts.special_char)
+  if not opts.choice then
+    return
+  end
+  if opts.choice.special_char and not opts.choice.preview.title then
+    opts.choice.preview.title = title(opts.choice.special_char)
   end
 end
 
-function M.make_choice_options(opts)
-  set_title(opts.choice or {})
-  return vim.tbl_deep_extend("force", M.options.choice, opts.choice or {})
-end
-
-function M.make_python_options(opts)
-  return vim.tbl_deep_extend("force", M.options.python, opts.python or {})
+function M.make_options(opts)
+  set_title(opts)
+  return vim.tbl_deep_extend("force", M.options, opts or {})
 end
 
 M.setup = function(opts)

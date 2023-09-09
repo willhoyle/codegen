@@ -84,4 +84,29 @@ function M.script_path()
   return str:match('(.*' .. get_path_separator() .. ')')
 end
 
+function M.get_first_capture_by_name(name, tstree, query, bufnr)
+  for _, tree in pairs(tstree) do
+    for id, capture_node, metadata in query:iter_captures(tree:root(), bufnr, 0, -1) do
+      local capture_name = query.captures[id] -- name of the capture in the query
+      print(vim.inspect(query.captures))
+      if capture_name == name then
+        return capture_node
+      end
+    end
+  end
+end
+
+function M.get_last_capture_by_name(name, tstree, query, bufnr)
+  local capture = nil
+  for _, tree in pairs(tstree) do
+    for id, capture_node, metadata in query:iter_captures(tree:root(), bufnr, 0, -1) do
+      local capture_name = query.captures[id] -- name of the capture in the query
+      if capture_name == name then
+        capture = capture_node
+      end
+    end
+  end
+  return capture
+end
+
 return M

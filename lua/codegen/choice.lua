@@ -41,16 +41,17 @@ function Choice:leaving_telescope_prompt()
   end
 end
 
-function Choice:_get_telescope(opts, callback)
-  local options = vim.tbl_deep_extend("force", self.options, opts or {})
-  local cancel_func = function() end
-  if options.cancel_on_exit_telescope then
-    options.cancel_current()
+function Choice:_get_telescope(name, opts, callback)
+  local choice_options = vim.tbl_deep_extend("force", self.options.choice, opts or {})
+  choice_options.preview.choice_name = name
+
+  if choice_options.cancel_on_exit_telescope then
+    choice_options.cancel_current()
   else
-    cancel_func = function()
-      self:get_telescope(opts, callback)
+    local cancel_func = function()
+      self:get_telescope(name, opts, callback)
     end
-    options.set_current(cancel_func)
+    choice_options.set_current(cancel_func)
   end
   local telescope_leave_augroup = vim.api.nvim_create_augroup("TelescopeLeave", { clear = true })
   vim.api.nvim_create_autocmd('WinLeave', {
@@ -59,29 +60,29 @@ function Choice:_get_telescope(opts, callback)
     callback = function() self:leaving_telescope_prompt() end
   })
 
-  if not options.preview.empty_template then
-    options.preview.empty_template = options.preview.template
-    options.preview.empty_filetype = options.preview.filetype
+  if choice_options.preview.empty_template == nil or choice_options.preview.empty_template == "" then
+    choice_options.preview.empty_template = choice_options.preview.template
+    choice_options.preview.empty_filetype = choice_options.preview.filetype
   end
 
 
 
   local result
   local pre = previewers.new_buffer_previewer {
-    title = options.preview.title,
+    title = choice_options.preview.title,
     define_preview = function(_self, entry, status)
-      vim.api.nvim_buf_set_option(_self.state.bufnr, "filetype", options.preview.filetype)
+      vim.api.nvim_buf_set_option(_self.state.bufnr, "filetype", choice_options.preview.filetype)
       local bufnr = vim.api.nvim_get_current_buf()
       local current_picker = state.get_current_picker(bufnr)
       local prompt = current_picker:_get_prompt()
-      if string.sub(prompt, -1, -1) == options.special_char then
-        options.data[options.preview.choice_name] = string.sub(prompt, 1, -2)
+      if string.sub(prompt, -1, -1) == choice_options.special_char then
+        self.options.data[choice_options.preview.choice_name] = string.sub(prompt, 1, -2)
       else
-        options.data[options.preview.choice_name] = entry.choice
+        self.options.data[choice_options.preview.choice_name] = entry.choice
       end
       vim.api.nvim_buf_set_lines(_self.state.bufnr, 0, -1, false, lustache.render(
-        options.preview.template,
-        options.data
+        choice_options.preview.template,
+        self.options.data
       ))
     end
   }
@@ -96,21 +97,22 @@ function Choice:_get_telescope(opts, callback)
         vim.api.nvim_win_set_buf(status.preview_win, _self._empty_bufnr)
       end
 
-      if options.preview.empty_template then
+      if choice_options.preview.empty_template then
         local bufnr = vim.api.nvim_get_current_buf()
         local current_picker = state.get_current_picker(bufnr)
         local prompt = current_picker:_get_prompt()
 
-        if string.sub(prompt, -1, -1) == options.special_char then
-          options.data[options.preview.choice_name] = string.sub(prompt, 1, -2)
+        if string.sub(prompt, -1, -1) == choice_options.special_char then
+          self.options.data[choice_options.preview.choice_name] = string.sub(prompt, 1, -2)
         else
-          options.data[options.preview.choice_name] = prompt
+          self.options.data[choice_options.preview.choice_name] = prompt
         end
-        vim.api.nvim_buf_set_option(_self._empty_bufnr, "filetype", options.preview.empty_filetype)
+
+        vim.api.nvim_buf_set_option(_self._empty_bufnr, "filetype", choice_options.preview.empty_filetype)
         vim.api.nvim_buf_set_lines(_self._empty_bufnr, 0, -1, false,
           lustache.render(
-            options.preview.empty_template,
-            options.data
+            choice_options.preview.empty_template,
+            self.options.data
           ))
       end
       return true
@@ -120,10 +122,10 @@ function Choice:_get_telescope(opts, callback)
 
 
   local p = pickers.new({}, {
-    prompt_title = options.title,
+    prompt_title = choice_options.title,
     previewer = pre,
     finder = finders.new_table {
-      results = options.choices,
+      results = choice_options.choices,
       entry_maker = function(entry)
         if type(entry) ~= "table" then
           entry = {
@@ -155,17 +157,19 @@ function Choice:_get_telescope(opts, callback)
           -- ordinal: for sorting, possibly transformed value
           -- display: for results list, possibly transformed value
           result = action_state.get_selected_entry()
-          local override_char_is_present = string.sub(prompt, -1, -1) == options.special_char
+          local override_char_is_present = string.sub(prompt, -1, -1) == choice_options.special_char
           if prompt and (not result or override_char_is_present) then
             local v = override_char_is_present and string.sub(prompt, 1, -2) or prompt
             if callback then
               vim.schedule(function()
+                self.options.data[name] = v
                 callback(v)
               end)
             end
           else
             if callback then
               vim.schedule(function()
+                self.options.data[name] = result.value.value
                 callback(result.value.value)
               end)
             end
@@ -180,7 +184,8 @@ function Choice:_get_telescope(opts, callback)
   p:find()
 end
 
-Choice.get_telescope = async.wrap(Choice._get_telescope, 3)
+Choice.get_telescope = async.wrap(Choice._get_telescope, 4)
+Choice.__call = async.wrap(Choice._get_telescope, 4)
 
 return {
   Choice = Choice
