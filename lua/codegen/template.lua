@@ -25,13 +25,11 @@ function M.render(template, data, indent)
     table.insert(lines, output)
   end
 
-  print(vim.inspect(lines))
   return lines
 end
 
 function M.render_string(template, data)
   data = data or {}
-  -- print(vim.inspect(data))
   local output = lustache:render(template, data)
   return output
 end

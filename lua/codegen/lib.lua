@@ -3,6 +3,7 @@ local choice = require("codegen.choice")
 local async = require("codegen.async")
 local lang = require('codegen.lang')
 local tasks = require('codegen.tasks')
+local Fragment = require('codegen.fragment')
 
 
 local Codegen = {}
@@ -14,6 +15,16 @@ function Codegen.new(opts)
     data = merged_options.data,
     choice = choice.Choice.new(merged_options),
     python = lang.Python.new(merged_options),
+    js = lang.JS.new(merged_options),
+    fragment = {
+      new = function(template, opts_)
+        opts_ = opts_ or {}
+        opts_.data = merged_options.data
+        return Fragment.new(
+          template, opts_
+        )
+      end
+    },
     wait = async.wrap(function(callback)
       tasks.set_current(callback, merged_options)
     end, 1),

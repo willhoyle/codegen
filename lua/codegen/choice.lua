@@ -41,6 +41,12 @@ function Choice:leaving_telescope_prompt()
   end
 end
 
+function Choice:_yes_no(name, title, callback)
+  self:_get_telescope(name, { choices = { "Yes", "No" }, title = title }, function(response)
+    callback(response == "Yes" or response == "y")
+  end)
+end
+
 function Choice:_get_telescope(name, opts, callback)
   local choice_options = vim.tbl_deep_extend("force", self.options.choice, opts or {})
   choice_options.preview.choice_name = name
@@ -69,7 +75,7 @@ function Choice:_get_telescope(name, opts, callback)
 
   local result
   local pre = previewers.new_buffer_previewer {
-    title = choice_options.preview.title,
+    title = lustache.render_string(choice_options.preview.title, self.options.data),
     define_preview = function(_self, entry, status)
       vim.api.nvim_buf_set_option(_self.state.bufnr, "filetype", choice_options.preview.filetype)
       local bufnr = vim.api.nvim_get_current_buf()
@@ -80,6 +86,7 @@ function Choice:_get_telescope(name, opts, callback)
       else
         self.options.data[choice_options.preview.choice_name] = entry.choice
       end
+
       vim.api.nvim_buf_set_lines(_self.state.bufnr, 0, -1, false, lustache.render(
         choice_options.preview.template,
         self.options.data
@@ -185,6 +192,7 @@ function Choice:_get_telescope(name, opts, callback)
 end
 
 Choice.get_telescope = async.wrap(Choice._get_telescope, 4)
+Choice.yes_no = async.wrap(Choice._yes_no, 4)
 Choice.__call = async.wrap(Choice._get_telescope, 4)
 
 return {

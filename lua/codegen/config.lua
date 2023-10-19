@@ -23,9 +23,10 @@ local defaults = {
     data = {},
     set_current = tasks.set_current,
     cancel_current = tasks.cancel_current,
-    cancel_on_exit = false
+    cancel_on_exit_telescope = true
   },
   python = {},
+  js = {},
   data = {}
 }
 
